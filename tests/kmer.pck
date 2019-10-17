@@ -1,0 +1,14 @@
+(dp0
+S'GAG'
+p1
+I1
+sS'CAG'
+p2
+I1
+sS'AGA'
+p3
+I2
+sS'TCA'
+p4
+I1
+s.
