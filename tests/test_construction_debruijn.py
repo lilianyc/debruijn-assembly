@@ -4,6 +4,7 @@ import os
 import networkx as nx
 import pickle
 from .context import debruijn
+#from .context import debruijn_comp
 from debruijn import read_fastq
 from debruijn import cut_kmer
 from debruijn import build_kmer_dict
@@ -49,3 +50,20 @@ def test_build_graph():
     assert "AG" in graph
     assert "GA" in graph
     assert graph.edges["AG", "GA"]['weight'] == 2
+
+# def test_build_graph_comp():
+#     file = open(os.path.abspath(os.path.join(os.path.dirname(__file__), "kmer_comp.pck")),'rb')
+#     kmer_dict = pickle.load(file)
+#     graph = build_graph(kmer_dict)
+#     #TCAGAGA
+#     #TCA  TC CA
+#     #CAG CA AG
+#     #AGA AG GA
+#     #GAG GA AG
+#     #AGA AG GA
+#     # ((TC, AG), (CA, GT)), (CA, AG), (AG
+#     assert graph.number_of_nodes() == 4
+#     assert graph.number_of_edges() == 3
+#     assert "AG" in graph
+#     assert "GA" in graph
+#     assert graph.edges["AG", "GA"]['weight'] == 2
