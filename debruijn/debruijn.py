@@ -29,11 +29,24 @@ def read_fastq(fastq_file):
 def cut_kmer(sequence, kmer_size):
     """Cuts and returns k-mer iterator.
     """
-    pass
+    offset = 0
+    while True:
+        yield sequence[offset:(offset + kmer_size)]
+        offset += kmer_size
 
 
-def build_kmer_dict():
-    pass
+
+def build_kmer_dict(fastq_file, kmer_size):
+    kmer_count = {}
+    sequences = read_fastq(fastq_file)
+    for sequence in sequences:
+        kmers = cut_kmer(sequence, kmer_size)
+        for kmer in kmers:
+            if not kmer in kmer_count:
+                kmer_count[kmer] = 0
+            else:
+                kmer_count[kmer] += 1
+    return kmer_count
 
 
 def main():
@@ -52,11 +65,16 @@ def main():
     options = parser.parse_args()
 
     return options
-    
 
 
 if __name__ == "__main__":
     options = main()
     print(options)
+
     data_dir = Path(__name__).resolve().parent.joinpath("data/")
     sequences = read_fastq(data_dir.joinpath("eva71_two_reads.fq"))
+    seq1 = next(sequences)
+    kmers = cut_kmer(seq1, 2)
+
+    kmer_count = build_kmer_dict(data_dir.joinpath("eva71_two_reads.fq"), 2)
+    kmer_count
