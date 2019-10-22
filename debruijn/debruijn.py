@@ -21,11 +21,12 @@ def read_fastq(fastq_file):
     """
     with open(fastq_file, "r") as filin:
         for line_number, line in enumerate(filin):
-            print(line_number, line.strip())
+            if line_number % 4 == 1:
+                yield line.strip()
     
 
 
-def cut_kmer():
+def cut_kmer(sequence, kmer_size):
     """Cuts and returns k-mer iterator.
     """
     pass
@@ -57,5 +58,5 @@ def main():
 if __name__ == "__main__":
     options = main()
     print(options)
-#    data_dir = Path(__name__).resolve().parent.parent.joinpath("data/")
-#    read_fastq(data_dir.joinpath("eva71_two_reads.fq"))
+    data_dir = Path(__name__).resolve().parent.joinpath("data/")
+    sequences = read_fastq(data_dir.joinpath("eva71_two_reads.fq"))
