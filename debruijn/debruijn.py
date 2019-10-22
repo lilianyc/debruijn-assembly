@@ -62,16 +62,31 @@ def build_graph(kmer_count):
         graph.add_edge(node_1, node_2, weight=kmer_count[kmer])
     return graph
 
+# =============================================================================
+# Graph analysis.
+# =============================================================================
 
-def get_starting_nodes():
-    pass
+def get_starting_nodes(graph):
+    """Returns a list of starting nodes.
+    """
+    starting_node_list = []
+    for node in graph.nodes():
+        if not list(graph.predecessors(node)):
+            starting_node_list.append(node)
+    return starting_node_list
 
 
-def get_sink_nodes():
-    pass
+def get_sink_nodes(graph):
+    """Returns a list of sink nodes.
+    """
+    sink_node_list = []
+    for node in graph.nodes():
+        if not list(graph.successors(node)):
+            sink_node_list.append(node)
+    return sink_node_list
 
 
-def get_contigs():
+def get_contigs(graph, starting_nodes, sink_nodes):
     pass
 
 
@@ -118,9 +133,9 @@ def main():
     # arguments
     parser.add_argument("-i", "--input", required=True,
                         help=("name of the fastq file."))
-    parser.add_argument("-k", "--kmer", type=int, const=21, nargs="?",
+    parser.add_argument("-k", "--kmer", type=int, default=21,
                         help="length of kmers (default: 21).")
-    parser.add_argument("-o", "--config", type=str,
+    parser.add_argument("-o", "--config",
                         help="name of config file.")
 
     # get all arguments
@@ -138,5 +153,7 @@ if __name__ == "__main__":
     seq1 = next(sequences)
     kmers = cut_kmer(seq1, 2)
 
-    kmer_count = build_kmer_dict(data_dir.joinpath("eva71_two_reads.fq"), 2)
+    kmer_count = build_kmer_dict(data_dir.joinpath("eva71_two_reads.fq"), 3)
     print(kmer_count)
+
+    graph = build_graph(kmer_count)
