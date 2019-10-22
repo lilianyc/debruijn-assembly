@@ -12,7 +12,7 @@ from pathlib import Path
 import networkx as nx
 
 # =============================================================================
-# part a
+# Identify unique kmers.
 # =============================================================================
 
 def read_fastq(fastq_file):
@@ -49,11 +49,65 @@ def build_kmer_dict(fastq_file, kmer_size):
     return kmer_count
 
 # =============================================================================
-# part b
+# Build the De Bruijn graph.
 # =============================================================================
 
-def build_seq(kmer_count):
+def build_graph(kmer_count):
+    """Build a networkx.DiGraph from a dict of kmer counts.
+    """
     graph = nx.DiGraph()
+    for kmer in kmer_count.keys():
+        node_1 = kmer[:-1]
+        node_2 = kmer[1:]
+        graph.add_edge(node_1, node_2, weight=kmer_count[kmer])
+    return graph
+
+
+def get_starting_nodes():
+    pass
+
+
+def get_sink_nodes():
+    pass
+
+
+def get_contigs():
+    pass
+
+
+def save_contigs():
+    pass
+
+
+def std():
+    pass
+
+
+def path_average_weight():
+    pass
+
+
+def remove_paths():
+    pass
+
+
+def select_best_path():
+    pass
+
+
+def solve_bubble():
+    pass
+
+
+def simplify_bubbles():
+    pass
+
+
+def solve_entry_tips():
+    pass
+
+
+def solve_out_tips():
     pass
 
 
@@ -65,7 +119,7 @@ def main():
     parser.add_argument("-i", "--input", required=True,
                         help=("name of the fastq file."))
     parser.add_argument("-k", "--kmer", type=int, const=21, nargs="?",
-                        help="length of kmers.")
+                        help="length of kmers (default: 21).")
     parser.add_argument("-o", "--config", type=str,
                         help="name of config file.")
 
