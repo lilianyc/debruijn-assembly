@@ -9,6 +9,7 @@ Created on Tue Oct 22 11:14:42 2019
 import argparse
 import os
 from pathlib import Path
+import random
 import statistics
 
 import networkx as nx
@@ -147,7 +148,7 @@ def path_average_weight(graph, path):
 def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
     """Return graph with paths removed.
 
-    Not elegant.
+    Not elegant and potentially dangerous.
     """
     for path in paths:
         for node_1 in path[1:-1]:
@@ -168,18 +169,27 @@ def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
     return graph
 
 
-def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
-    """Remove paths in a graph.
+
+def select_best_path(graph, paths, path_lengths, avg_path_weights,
+                     delete_entry_node=False, delete_sink_node=False):
+    """Return a cleaned graph with the supposedly best path.
     """
-    for path in paths:
-        graph.remove_nodes_from(path[not delete_entry_node:-delete_sink_node])
+    # We put a random seed over 9000.
+    random.seed(9001)
+
+    # Sort by weight then by length
+#    sorted_paths = sorted([avg_path_weights, path_lengths])
+#    print(sorted_paths)
+    for weight, length in zip(avg_path_weights, path_lengths): pass
+    best_weight_indices = [i for i, weight in enumerate(avg_path_weights)
+                           if weight == max(avg_path_weights)]
+    best_length_indices = [i for i, length in enumerate(path_lengths)
+                           if length == max(path_lengths)]
+    # Same weights and lengths for the 2 first elements.
+    best_path_index = random.choice(best_length_indices)
+    graph = remove_paths(graph, paths[:best_path_index]+paths[(best_path_index+1):],
+                         delete_entry_node, delete_sink_node)
     return graph
-            
-
-
-
-def select_best_path():
-    pass
 
 
 def solve_bubble():
