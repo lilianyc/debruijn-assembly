@@ -22,7 +22,7 @@ def read_fastq(fastq_file):
         for line_number, line in enumerate(filin):
             if line_number % 4 == 1:
                 yield line.strip()
-    
+
 
 def cut_kmer(sequence, kmer_size):
     """Cuts and returns k-mer iterator.
@@ -139,4 +139,4 @@ if __name__ == "__main__":
     kmers = cut_kmer(seq1, 2)
 
     kmer_count = build_kmer_dict(data_dir.joinpath("eva71_two_reads.fq"), 2)
-    kmer_count
+    print(kmer_count)

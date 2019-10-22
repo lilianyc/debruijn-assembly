@@ -14,7 +14,7 @@ test-coverage: ## Run tests with coverage
 .PHONY: test-coverage
 
 lint: ## Lint code
-	pylint seq_to_first_iso
+	pylint debruijn
 .PHONY: lint
 
 help:

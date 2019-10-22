@@ -1,0 +1,5 @@
+{
+  "tests/test_characteristics.py": true, 
+  "tests/test_construction_debruijn.py": true, 
+  "tests/test_decision.py": true
+}
