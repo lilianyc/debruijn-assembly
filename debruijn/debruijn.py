@@ -7,6 +7,7 @@ Created on Tue Oct 22 11:14:42 2019
 """
 
 import argparse
+import os
 from pathlib import Path
 
 import networkx as nx
@@ -87,11 +88,30 @@ def get_sink_nodes(graph):
 
 
 def get_contigs(graph, starting_nodes, sink_nodes):
-    pass
+    """Returns a list of tuple (contigs, len(contigs))
+    """
+    contigs = []
+    for start_node in starting_nodes:
+        for sink_node in sink_nodes:
+            path = nx.shortest_path(graph, start_node, sink_node)
+            contig = "".join([node[0] for node in path[:-1]] + [path[-1]])
+            contigs.append((contig, len(contig)))
+    return contigs
 
 
-def save_contigs():
-    pass
+def fill(text, width=80):
+    """Split text with a line return to respect fasta format"""
+    return os.linesep.join(text[i:i+width] for i in range(0, len(text), width))
+
+
+def save_contigs(contig_tuples, output_filename):
+    """Save a list of (contig, len(contig)) tuples in a file.
+    """
+    annotation_template = ">contig_{} len={}\n"
+    with open(output_filename, "w") as filout:
+        for i, contig_tuple in enumerate(contig_tuples):
+            filout.write(annotation_template.format(i, contig_tuple[1]))
+            filout.write(fill(contig_tuple[0])+"\n")
 
 
 def std():
