@@ -9,11 +9,16 @@ Created on Tue Oct 22 11:14:42 2019
 import argparse
 import os
 from pathlib import Path
+import statistics
 
 import networkx as nx
 
 # =============================================================================
-# Identify unique kmers.
+# 1. Create the De Bruijn graph.
+# =============================================================================
+
+# =============================================================================
+# a. Identify unique kmers.
 # =============================================================================
 
 def read_fastq(fastq_file):
@@ -50,7 +55,7 @@ def build_kmer_dict(fastq_file, kmer_size):
     return kmer_count
 
 # =============================================================================
-# Build the De Bruijn graph.
+# b. Build the De Bruijn graph.
 # =============================================================================
 
 def build_graph(kmer_count):
@@ -64,7 +69,7 @@ def build_graph(kmer_count):
     return graph
 
 # =============================================================================
-# Graph analysis.
+# 2. Graph analysis.
 # =============================================================================
 
 def get_starting_nodes(graph):
@@ -93,7 +98,10 @@ def get_contigs(graph, starting_nodes, sink_nodes):
     contigs = []
     for start_node in starting_nodes:
         for sink_node in sink_nodes:
-            path = nx.shortest_path(graph, start_node, sink_node)
+            try:
+                path = nx.shortest_path(graph, start_node, sink_node)
+            except:
+                continue
             contig = "".join([node[0] for node in path[:-1]] + [path[-1]])
             contigs.append((contig, len(contig)))
     return contigs
@@ -113,17 +121,61 @@ def save_contigs(contig_tuples, output_filename):
             filout.write(annotation_template.format(i, contig_tuple[1]))
             filout.write(fill(contig_tuple[0])+"\n")
 
+# =============================================================================
+# 3. Graph simplification.
+# =============================================================================
 
-def std():
-    pass
+# =============================================================================
+# a. Bubble resolution
+# =============================================================================
+
+def std(values):
+    """Compute the standard deviation of a list of values.
+    """
+    return statistics.stdev(values)
 
 
-def path_average_weight():
-    pass
+def path_average_weight(graph, path):
+    """Compute the average weight on a path.
+    """
+    total = 0
+    for node_1, node_2 in zip(path[:-1], path[1:]):
+        total += graph[node_1][node_2]["weight"]
+    return total/(len(path)-1)
 
 
-def remove_paths():
-    pass
+def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
+    """Return graph with paths removed.
+
+    Not elegant.
+    """
+    for path in paths:
+        for node_1 in path[1:-1]:
+            try:
+                graph.remove_node(node_1)
+            except:
+                pass
+        if delete_entry_node:
+            try:
+                graph.remove_node(path[0])
+            except:
+                pass
+        if delete_sink_node:
+            try:
+                graph.remove_node(path[-1])
+            except:
+                pass
+    return graph
+
+
+def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
+    """Remove paths in a graph.
+    """
+    for path in paths:
+        graph.remove_nodes_from(path[not delete_entry_node:-delete_sink_node])
+    return graph
+            
+
 
 
 def select_best_path():
