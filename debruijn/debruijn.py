@@ -9,12 +9,11 @@ Created on Tue Oct 22 11:14:42 2019
 import argparse
 from pathlib import Path
 
+import networkx as nx
 
-"""
--i fichier fastq single end
--k taille des kmer (optionnel - default 21)
--o fichier config
-"""
+# =============================================================================
+# part a
+# =============================================================================
 
 def read_fastq(fastq_file):
     """Reads a fastq file and returns a sequence generator.
@@ -25,28 +24,37 @@ def read_fastq(fastq_file):
                 yield line.strip()
     
 
-
 def cut_kmer(sequence, kmer_size):
     """Cuts and returns k-mer iterator.
     """
+    sequence_length = len(sequence)
     offset = 0
-    while True:
+    while offset + kmer_size <= sequence_length:
         yield sequence[offset:(offset + kmer_size)]
-        offset += kmer_size
-
+        offset += 1
 
 
 def build_kmer_dict(fastq_file, kmer_size):
+    """Returns a dict of kmer counts.
+    """
     kmer_count = {}
     sequences = read_fastq(fastq_file)
     for sequence in sequences:
         kmers = cut_kmer(sequence, kmer_size)
         for kmer in kmers:
             if not kmer in kmer_count:
-                kmer_count[kmer] = 0
+                kmer_count[kmer] = 1
             else:
                 kmer_count[kmer] += 1
     return kmer_count
+
+# =============================================================================
+# part b
+# =============================================================================
+
+def build_seq(kmer_count):
+    graph = nx.DiGraph()
+    pass
 
 
 def main():
