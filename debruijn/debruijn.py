@@ -23,8 +23,7 @@ import networkx as nx
 # =============================================================================
 
 def read_fastq(fastq_file):
-    """Reads a fastq file and returns a sequence generator.
-    """
+    """Reads a fastq file and returns a generator from sequences."""
     with open(fastq_file, "r") as filin:
         for line_number, line in enumerate(filin):
             if line_number % 4 == 1:
@@ -32,8 +31,7 @@ def read_fastq(fastq_file):
 
 
 def cut_kmer(sequence, kmer_size):
-    """Cuts and returns k-mer iterator.
-    """
+    """Cuts a sequence into a k-mer iterator."""
     sequence_length = len(sequence)
     offset = 0
     while offset + kmer_size <= sequence_length:
@@ -42,8 +40,7 @@ def cut_kmer(sequence, kmer_size):
 
 
 def build_kmer_dict(fastq_file, kmer_size):
-    """Returns a dict of kmer counts.
-    """
+    """Returns a dict of kmer counts."""
     kmer_count = {}
     sequences = read_fastq(fastq_file)
     for sequence in sequences:
@@ -60,8 +57,7 @@ def build_kmer_dict(fastq_file, kmer_size):
 # =============================================================================
 
 def build_graph(kmer_count):
-    """Build a networkx.DiGraph from a dict of kmer counts.
-    """
+    """Build a networkx.DiGraph from a dict of kmer counts."""
     graph = nx.DiGraph()
     for kmer in kmer_count.keys():
         node_1 = kmer[:-1]
@@ -74,8 +70,7 @@ def build_graph(kmer_count):
 # =============================================================================
 
 def get_starting_nodes(graph):
-    """Returns a list of starting nodes.
-    """
+    """Get the list of starting nodes in a networkx graph."""
     starting_node_list = []
     for node in graph.nodes():
         if not list(graph.predecessors(node)):
@@ -84,8 +79,7 @@ def get_starting_nodes(graph):
 
 
 def get_sink_nodes(graph):
-    """Returns a list of sink nodes.
-    """
+    """Get the list of sink nodes in a networkx graph."""
     sink_node_list = []
     for node in graph.nodes():
         if not list(graph.successors(node)):
@@ -94,8 +88,7 @@ def get_sink_nodes(graph):
 
 
 def get_contigs(graph, starting_nodes, sink_nodes):
-    """Returns a list of tuple (contigs, len(contigs))
-    """
+    """Returns a list of tuple (contigs, len(contigs))."""
     contigs = []
     for start_node in starting_nodes:
         for sink_node in sink_nodes:
@@ -114,8 +107,7 @@ def fill(text, width=80):
 
 
 def save_contigs(contig_tuples, output_filename):
-    """Save a list of (contig, len(contig)) tuples in a file.
-    """
+    """Save a list of (contig, len(contig)) tuples in a file."""
     annotation_template = ">contig_{} len={}\n"
     with open(output_filename, "w") as filout:
         for i, contig_tuple in enumerate(contig_tuples):
@@ -131,14 +123,12 @@ def save_contigs(contig_tuples, output_filename):
 # =============================================================================
 
 def std(values):
-    """Compute the standard deviation of a list of values.
-    """
+    """Compute the standard deviation of a list of values."""
     return statistics.stdev(values)
 
 
 def path_average_weight(graph, path):
-    """Compute the average weight on a path.
-    """
+    """Compute the average weight on a path."""
     total = 0
     for node_1, node_2 in zip(path[:-1], path[1:]):
         total += graph[node_1][node_2]["weight"]
@@ -148,7 +138,7 @@ def path_average_weight(graph, path):
 def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
     """Return graph with paths removed.
 
-    Not elegant and potentially dangerous.
+    Not elegant and potentially dangerous.  Try using remove_nodes_from().
     """
     for path in paths:
         for node_1 in path[1:-1]:
@@ -180,30 +170,28 @@ def select_best_path(graph, paths, path_lengths, avg_path_weights,
     random.seed(9001)
 
     # Sort by weight then by length
-#    sorted_paths = sorted([avg_path_weights, path_lengths])
-#    print(sorted_paths)
-    for weight, length in zip(avg_path_weights, path_lengths): pass
-#    best_weight_indices = [i for i, weight in enumerate(avg_path_weights)
-#                           if weight == max(avg_path_weights)]
-#    best_length_indices = [i for i, length in enumerate(path_lengths)
-#                           if length == max(path_lengths)]
-    # Same weights and lengths for the 2 first elements.
     best_weight_indexes = [i for i, weight in enumerate(avg_path_weights)
-                         if weight == max(avg_path_weights)]
+                           if weight == max(avg_path_weights)]
+    best_length_and_weights = [length for i, length in enumerate(path_lengths)
+                               if i in best_weight_indexes]
     # Do on length
     best_path_indexes = [i for i in best_weight_indexes
-                          if path_lengths[i] == max([length for i, length in enumerate(path_lengths)
-                                                     if i in best_weight_indexes])
-    ]
-    print(best_path_indexes)
+                         if path_lengths[i] == max(best_length_and_weights)]
+    #print(best_path_indexes)
     best_path_index = random.choice(best_path_indexes)
     graph = remove_paths(graph, paths[:best_path_index]+paths[(best_path_index+1):],
                          delete_entry_node, delete_sink_node)
     return graph
 
 
-def solve_bubble():
-    pass
+def solve_bubble(graph, start_node, sink_node):
+    """Remove bubbles between start_node and sink_node.
+    """
+    paths = list(nx.all_simple_paths(graph, start_node, sink_node))
+    path_lengths = [len(path) for path in paths]
+    avg_path_weights = [path_average_weight(graph, path) for path in paths]
+
+    return select_best_path(graph, paths, path_lengths, avg_path_weights)
 
 
 def simplify_bubbles():
