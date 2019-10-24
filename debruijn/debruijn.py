@@ -136,32 +136,21 @@ def path_average_weight(graph, path):
 
 
 def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
-    """Return graph with paths removed.
-
-    Not elegant and potentially dangerous.  Try using remove_nodes_from().
-    """
+    """Return graph with paths removed."""
     for path in paths:
-        for node_1 in path[1:-1]:
-            try:
-                graph.remove_node(node_1)
-            except:
-                pass
-        if delete_entry_node:
-            try:
-                graph.remove_node(path[0])
-            except:
-                pass
-        if delete_sink_node:
-            try:
-                graph.remove_node(path[-1])
-            except:
-                pass
+        # Use the boolean properties to save some lines.
+        graph.remove_nodes_from(path[(not delete_entry_node):
+                                     (None if delete_sink_node else -1)])
     return graph
 
 
 def select_best_path(graph, paths, path_lengths, avg_path_weights,
                      delete_entry_node=False, delete_sink_node=False):
-    """Return a cleaned graph with the supposedly best path."""
+    """Return a cleaned graph with the supposedly best path.
+
+    The function assumes paths not empty.
+
+    """
     # We put a random seed over 9000.
     random.seed(9001)
 
