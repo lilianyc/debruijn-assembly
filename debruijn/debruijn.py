@@ -159,25 +159,22 @@ def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
     return graph
 
 
-
 def select_best_path(graph, paths, path_lengths, avg_path_weights,
                      delete_entry_node=False, delete_sink_node=False):
-    """Return a cleaned graph with the supposedly best path.
-
-    Ugly.
-    """
+    """Return a cleaned graph with the supposedly best path."""
     # We put a random seed over 9000.
     random.seed(9001)
 
-    # Sort by weight then by length
+    # Indexes of paths with best weight.
     best_weight_indexes = [i for i, weight in enumerate(avg_path_weights)
                            if weight == max(avg_path_weights)]
+    # Paths with best lengths for paths with best weights.
     best_length_and_weights = [length for i, length in enumerate(path_lengths)
                                if i in best_weight_indexes]
-    # Do on length
+    # Indexes of paths with best weights and length.
     best_path_indexes = [i for i in best_weight_indexes
                          if path_lengths[i] == max(best_length_and_weights)]
-    #print(best_path_indexes)
+
     best_path_index = random.choice(best_path_indexes)
     graph = remove_paths(graph, paths[:best_path_index]+paths[(best_path_index+1):],
                          delete_entry_node, delete_sink_node)
@@ -185,8 +182,7 @@ def select_best_path(graph, paths, path_lengths, avg_path_weights,
 
 
 def solve_bubble(graph, start_node, sink_node):
-    """Remove bubbles between start_node and sink_node.
-    """
+    """Remove bubbles between start_node and sink_node."""
     paths = list(nx.all_simple_paths(graph, start_node, sink_node))
     path_lengths = [len(path) for path in paths]
     avg_path_weights = [path_average_weight(graph, path) for path in paths]
@@ -194,11 +190,18 @@ def solve_bubble(graph, start_node, sink_node):
     return select_best_path(graph, paths, path_lengths, avg_path_weights)
 
 
-def simplify_bubbles():
-    pass
+def simplify_bubbles(graph):
+    """Remove all bubbles of a graph."""
+    starting_nodes = get_starting_nodes(graph)
+    sink_nodes = get_sink_nodes(graph)
+    # Not conviced it is the correct solution.
+    graph = solve_bubble(graph, starting_nodes[0], sink_nodes[0])
+    return graph
 
 
-def solve_entry_tips():
+def solve_entry_tips(graph, starting_nodes):
+    """
+    """
     pass
 
 
@@ -207,6 +210,7 @@ def solve_out_tips():
 
 
 def main():
+    """Parse the submitted command line."""
     parser = argparse.ArgumentParser(
         description="Read single-end fastq file and returns.")
 
@@ -215,8 +219,8 @@ def main():
                         help=("name of the fastq file."))
     parser.add_argument("-k", "--kmer", type=int, default=21,
                         help="length of kmers (default: 21).")
-    parser.add_argument("-o", "--config",
-                        help="name of config file.")
+    parser.add_argument("-o", "--contig",
+                        help="name of contig file.")
 
     # get all arguments
     options = parser.parse_args()
