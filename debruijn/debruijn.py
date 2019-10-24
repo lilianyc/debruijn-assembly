@@ -8,18 +8,17 @@ Created on Tue Oct 22 11:14:42 2019
 
 import argparse
 import os
-from pathlib import Path
 import random
 import statistics
 
 import networkx as nx
 
 # =============================================================================
-# 1. Create the De Bruijn graph.
+# 1. Create the De Bruijn graph
 # =============================================================================
 
 # =============================================================================
-# a. Identify unique kmers.
+# a. Identify unique kmers
 # =============================================================================
 
 def read_fastq(fastq_file):
@@ -53,7 +52,7 @@ def build_kmer_dict(fastq_file, kmer_size):
     return kmer_count
 
 # =============================================================================
-# b. Build the De Bruijn graph.
+# b. Build the De Bruijn graph
 # =============================================================================
 
 def build_graph(kmer_count):
@@ -66,7 +65,7 @@ def build_graph(kmer_count):
     return graph
 
 # =============================================================================
-# 2. Graph analysis.
+# 2. Graph analysis
 # =============================================================================
 
 def get_starting_nodes(graph):
@@ -115,7 +114,7 @@ def save_contigs(contig_tuples, output_filename):
             filout.write(fill(contig_tuple[0])+"\n")
 
 # =============================================================================
-# 3. Graph simplification.
+# 3. Graph simplification
 # =============================================================================
 
 # =============================================================================
@@ -132,7 +131,7 @@ def path_average_weight(graph, path):
     total = 0
     for node_1, node_2 in zip(path[:-1], path[1:]):
         total += graph[node_1][node_2]["weight"]
-    return total/(len(path)-1)
+    return total/(len(path)-1) if total else 0
 
 
 def remove_paths(graph, paths, delete_entry_node, delete_sink_node):
@@ -180,18 +179,49 @@ def solve_bubble(graph, start_node, sink_node):
 
 
 def simplify_bubbles(graph):
-    """Remove all bubbles of a graph."""
+    """Remove all bubbles from a graph."""
     starting_nodes = get_starting_nodes(graph)
     sink_nodes = get_sink_nodes(graph)
     # Not conviced it is the correct solution.
-    graph = solve_bubble(graph, starting_nodes[0], sink_nodes[0])
+    for start_node in starting_nodes:
+        for sink_node in sink_nodes:
+            # A path exists between the nodes.
+            if list(nx.all_simple_paths(graph, start_node, sink_node)):
+                graph = solve_bubble(graph, start_node, sink_node)
     return graph
 
+# =============================================================================
+# b. Tips detection
+# =============================================================================
 
 def solve_entry_tips(graph, starting_nodes):
-    """
-    """
-    pass
+    """Remove entry tips from an oriented graph."""
+    # Sanitize the graph.
+    graph = simplify_bubbles(graph)
+    # All existing tips.
+    tips = []
+    # Resolve all tips.
+    for start_node in starting_nodes:
+        current_node = start_node
+        path = [current_node]
+        successors = list(graph.successors(current_node))
+        predecessors = list(graph.predecessors(current_node))
+        # Iterate till the node has 2 predecessors/successors, or is sink node.
+        while len(successors) < 2 and len(predecessors) < 2 and successors:
+            current_node = successors[0]
+            path.append(current_node)
+            successors = list(graph.successors(current_node))
+            predecessors = list(graph.predecessors(current_node))
+        tips.append(path)
+
+#    if tips:
+    path_lengths = [len(path) for path in tips]
+    avg_path_weights = [path_average_weight(graph, path) for path in tips]
+
+    graph = select_best_path(graph, tips, path_lengths, avg_path_weights,
+                             delete_entry_node=True)
+
+    return graph
 
 
 def solve_out_tips():
