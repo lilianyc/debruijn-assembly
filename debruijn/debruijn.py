@@ -187,12 +187,23 @@ def simplify_bubbles(graph):
     """Remove all bubbles from a graph."""
     starting_nodes = get_starting_nodes(graph)
     sink_nodes = get_sink_nodes(graph)
-    # Not conviced it is the correct solution.
+    # Find all bubbles.
     for start_node in starting_nodes:
         for sink_node in sink_nodes:
+            # Find the smallest englobing bubble.
+            current_entry = start_node
+            current_exit = sink_node
+            successors = list(graph.successors(current_entry))
+            predecessors = list(graph.predecessors(current_exit))
+            while len(successors) < 2 and successors:
+                current_entry = successors[0]
+                successors = list(graph.successors(current_entry))
+            while len(predecessors) < 2 and predecessors:
+                current_exit = predecessors[0]
+                predecessors = list(graph.predecessors(current_exit))
             # A path exists between the nodes.
-            if list(nx.all_simple_paths(graph, start_node, sink_node)):
-                graph = solve_bubble(graph, start_node, sink_node)
+            if list(nx.all_simple_paths(graph, current_entry, current_exit)):
+                graph = solve_bubble(graph, current_entry, current_exit)
     return graph
 
 # =============================================================================
@@ -281,18 +292,24 @@ def main():
     options = user_input()
     print(f"kmer size: {options.kmer}")
     kmer_count = build_kmer_dict(options.input, options.kmer)
+    print(f"number of kmer found: {len(kmer_count)}")
     graph = build_graph(kmer_count)
 
     starting_nodes = get_starting_nodes(graph)
     sink_nodes = get_sink_nodes(graph)
     # Simplify the graph.
     graph = simplify_bubbles(graph)
+    print(f"after bubbles {len(graph.edges)}")
     graph = solve_entry_tips(graph, starting_nodes)
+    print(f"after entry tips {len(graph.edges)}")
     graph = solve_out_tips(graph, sink_nodes)
+    print(f"after out tips {len(graph.edges)}")
 
+    new_starting_nodes = get_starting_nodes(graph)
+    new_sink_nodes = get_sink_nodes(graph)
 
     print("Computing contigs...")
-    contig_tuples = get_contigs(graph, starting_nodes, sink_nodes)
+    contig_tuples = get_contigs(graph, new_starting_nodes, new_sink_nodes)
 
     print("Saving the contigs into a file...")
     save_contigs(contig_tuples, options.contig)
