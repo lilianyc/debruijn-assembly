@@ -5,6 +5,7 @@ Created on Tue Oct 22 11:14:42 2019
 
 @author: lyang_crosson
 """
+# pylint: disable=too-many-arguments
 
 import argparse
 import os
@@ -93,7 +94,7 @@ def get_contigs(graph, starting_nodes, sink_nodes):
         for sink_node in sink_nodes:
             try:
                 path = nx.shortest_path(graph, start_node, sink_node)
-            except:
+            except (nx.NodeNotFound, nx.NetworkXNoPath):
                 continue
             contig = "".join([node[0] for node in path[:-1]] + [path[-1]])
             contigs.append((contig, len(contig)))
@@ -130,7 +131,11 @@ def path_average_weight(graph, path):
     """Compute the average weight on a path."""
     total = 0
     for node_1, node_2 in zip(path[:-1], path[1:]):
-        total += graph[node_1][node_2]["weight"]
+        try:
+            total += graph[node_1][node_2]["weight"]
+        # No path between the nodes.
+        except KeyError:
+            pass
     return total/(len(path)-1) if total else 0
 
 
@@ -224,8 +229,32 @@ def solve_entry_tips(graph, starting_nodes):
     return graph
 
 
-def solve_out_tips():
-    pass
+def solve_out_tips(graph, sink_nodes):
+    """Remove out tips from an oriented graph."""
+    graph = simplify_bubbles(graph)
+
+    tips = []
+    # Resolve all tips.
+    for sink_node in sink_nodes:
+        current_node = sink_node
+        path = [current_node]
+        successors = list(graph.successors(current_node))
+        predecessors = list(graph.predecessors(current_node))
+        # Iterate till node has 2 predecessors/successors, or is start node.
+        while len(successors) < 2 and len(predecessors) < 2 and predecessors:
+            current_node = predecessors[0]
+            path.append(current_node)
+            successors = list(graph.successors(current_node))
+            predecessors = list(graph.predecessors(current_node))
+        # Reverse the path for path_average_weight.
+        tips.append(path[::-1])
+
+    path_lengths = [len(path) for path in tips]
+    avg_path_weights = [path_average_weight(graph, path) for path in tips]
+
+    graph = select_best_path(graph, tips, path_lengths, avg_path_weights,
+                             delete_sink_node=True)
+    return graph
 
 
 def user_input():
@@ -248,19 +277,19 @@ def user_input():
 
 
 def main():
-    """Entry point for debruijn's CLI.
-    """
+    """Entry point for debruijn's CLI."""
     options = user_input()
     print(f"kmer size: {options.kmer}")
     kmer_count = build_kmer_dict(options.input, options.kmer)
     graph = build_graph(kmer_count)
-    # Simplify the graph.
-    graph = simplify_bubbles(graph)
-#    graph = solve_entry_tips(graph)
-#    graph = solve_out_tips(graph)
 
     starting_nodes = get_starting_nodes(graph)
     sink_nodes = get_sink_nodes(graph)
+    # Simplify the graph.
+    graph = simplify_bubbles(graph)
+    graph = solve_entry_tips(graph, starting_nodes)
+    graph = solve_out_tips(graph, sink_nodes)
+
 
     print("Computing contigs...")
     contig_tuples = get_contigs(graph, starting_nodes, sink_nodes)
