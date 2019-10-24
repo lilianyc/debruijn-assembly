@@ -209,7 +209,7 @@ def solve_out_tips():
     pass
 
 
-def main():
+def user_input():
     """Parse the submitted command line."""
     parser = argparse.ArgumentParser(
         description="Read single-end fastq file and returns.")
@@ -219,7 +219,7 @@ def main():
                         help=("name of the fastq file."))
     parser.add_argument("-k", "--kmer", type=int, default=21,
                         help="length of kmers (default: 21).")
-    parser.add_argument("-o", "--contig",
+    parser.add_argument("-o", "--contig", required=True,
                         help="name of contig file.")
 
     # get all arguments
@@ -228,16 +228,27 @@ def main():
     return options
 
 
-if __name__ == "__main__":
-    options = main()
-    print(options)
-
-    data_dir = Path(__name__).resolve().parent.joinpath("data/")
-    sequences = read_fastq(data_dir.joinpath("eva71_two_reads.fq"))
-    seq1 = next(sequences)
-    kmers = cut_kmer(seq1, 2)
-
-    kmer_count = build_kmer_dict(data_dir.joinpath("eva71_two_reads.fq"), 3)
-    print(kmer_count)
-
+def main():
+    """Entry point for debruijn's CLI.
+    """
+    options = user_input()
+    print(f"kmer size: {options.kmer}")
+    kmer_count = build_kmer_dict(options.input, options.kmer)
     graph = build_graph(kmer_count)
+    # Simplify the graph.
+    graph = simplify_bubbles(graph)
+#    graph = solve_entry_tips(graph)
+#    graph = solve_out_tips(graph)
+
+    starting_nodes = get_starting_nodes(graph)
+    sink_nodes = get_sink_nodes(graph)
+
+    print("Computing contigs...")
+    contig_tuples = get_contigs(graph, starting_nodes, sink_nodes)
+
+    print("Saving the contigs into a file...")
+    save_contigs(contig_tuples, options.contig)
+
+
+if __name__ == "__main__":
+    main()
